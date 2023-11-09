@@ -1,0 +1,187 @@
+*                                 Data Preparation and Handling  
+                                           Assignment 3
+
+
+libname Ban110 '/home/u63416198/BAN 110 Datasets';
+run;
+*Question 1;
+
+data Ban110.Customer_all;
+set ban110.customer_all;
+
+proc means data = Ban110.customer_all;
+run;
+
+**************************************************************************************************************
+- The range of values for the variable pdays is -1 to 854. Since the variable pdays represents the number 
+   of days that have been passed by after the client was last contacted from a previous campaign and
+   it is stated that the dataset has no missing values.
+   -1 would represent the clients that have not yet been contacted.
+**************************************************************************************************************
+- The values for the variable days range from 1-31, which implies that the values represent the day of the month
+**************************************************************************************************************
+;
+proc means data = Ban110.customer_all Nmiss;
+var age;
+run;
+*********************************************
+-The variable age has 20 missing values 
+*********************************************
+Question 2.1;
+
+proc univariate data = ban110.customer_all;
+var age;
+histogram age;
+run;
+
+*Question 2.2;
+data ban110.customer_missing_age;
+set ban110.customer_all;
+
+if missing(age) then do;
+output;
+end;
+keep customer_id;
+run;
+
+*Question 2.3;
+data ban110.customer_all_imputed;
+set ban110.customer_all;
+run;
+
+proc stdize data= ban110.customer_all out= ban110.customer_all_imputed
+oprefix = Orig_
+reponly
+method = mean;
+var age;
+run;
+
+*Question 2.4;
+proc means data =ban110.customer_all_imputed Nmiss;
+var age;
+run;
+
+*Question 2.5;
+proc datasets library= ban110;
+delete customer_all;
+run;
+
+proc datasets library=ban110;
+change customer_all_imputed = customer_all;
+run;
+
+*Question 3;
+title 'Influence of age on balance';
+proc sgplot data=ban110.customer_all;
+reg x=age y=balance / lineattrs=(color=red thickness=2);
+run;
+
+*Question 3.1;
+data Ban110.customer_all;
+set Ban110.customer_all;
+  if 18 <= age <= 35 then age_cat = 'young_adult';
+  else if 36 <= age <= 55 then age_cat = 'middle_age';
+  else age_cat = 'old';
+run;
+
+proc freq data=ban110.customer_all;
+  tables age_cat;
+run;
+
+proc sgplot data= BAN110.CUSTOMER_ALL;
+    vbar age_cat / response=balance group=balance groupdisplay=cluster stat=mean;
+    yaxis grid;
+run;
+*Question 3.2
+-Old customers have the highest balance;
+
+*Question 4;
+proc univariate data = ban110.customer_all;
+var campaign;
+run;
+
+*Question 4.1;
+data ban110.customer_all;
+set ban110.customer_all;
+ if campaign = 1 then campaign_cat = '1';
+  else if campaign = 2 then campaign_cat = '2';
+  else if campaign = 3 then campaign_cat = '3';
+  else campaign_cat = '>3';
+ run;
+ 
+*Question 5.1;
+title "Running PROC UNIVARIATE on balance";
+proc univariate data= ban110.customer_all noprint;
+   id customer_id;
+   var balance;
+   histogram /;
+run;
+
+*Question 5.2;
+
+proc sgplot data=ban110.CUSTOMER_ALL;
+    vbar y / response=balance group=balance groupdisplay=cluster stat=mean;
+    yaxis grid;
+run;
+
+
+
+title 'distribution of balance by y';
+proc univariate data=ban110.customer_all noprint; 
+class y; 
+histogram balance; 
+run;
+
+* The First graph is more informative as it defines a concise and accurate picture of 
+how many people bought the CDs and how many didn't;
+
+*Question 6.1;
+proc univariate data = ban110.customer_all;
+var pdays;
+run;
+
+*Question 6.2;
+data ban110.customer_all;
+set ban110.customer_all;
+if pdays = -1 then contacted_before = 'No';
+else contacted_before = 'Yes';
+run;
+
+*Question 6.3;
+proc print data = ban110.customer_all (obs= 5);
+where pdays > 0;
+run;
+
+*Question 6.4;
+data ban110.customer_all;
+set ban110.customer_all;
+drop pdays;
+run;
+
+*Question 6.5;
+proc means data = ban110.customer_all;
+run;
+
+*Question 7;
+proc sort data=ban110.customer_all;
+  by balance;
+run;
+
+proc print data=ban110.customer_all(obs=10);
+var balance;
+  title '10 Lowest Values of Balance';
+run;
+
+proc sort data=ban110.customer_all;
+  by descending balance;
+run;
+
+proc print data= ban110.customer_all(obs=10);
+var balance;
+  title '10 Highest Values of Balance';
+run;
+
+
+
+
+
