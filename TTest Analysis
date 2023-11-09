@@ -1,186 +1,63 @@
-*                               TTest Analysis
+FILENAME REFFILE '/home/u63416198/sasuser.v94/File BIRTH(1).xlsx';
 
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=XLSX
+	OUT=WORK.Birth;
+	GETNAMES=YES;
+	SHEET="Birth";
+RUN;
 
-libname Ban110 '/home/u63416198/BAN 110 Datasets';
-run;
-*Question 1;
+                                               /* Parameters for the test*/
+/*
+-Null Hypothesis = (h=0)
+-Alternative Hypothesis = (h=1)
+-Alpha = 0.05 is used in the code as the metric of significance to achieve 95% Confidence interval level
+-Only the variables that have up to 2 levels have been used in these tests
+*/
 
-data Ban110.Customer_all;
-set ban110.customer_all;
+/*Test-1*/
+/*Hypothesis (h=0): Mothers smoking does not affect infant weight*/
+/*Alternate Hypothesis (h=1): Mothers smoking affects the weight of an infant*/
 
-proc means data = Ban110.customer_all;
-run;
+PROC ttest DATA = WORK.BIRTH SIDES=2 ALPHA= 0.05 H0=0;
+TITLE "EFFECT OF MOTHER SMOKING ON INFANT'S WEIGHT";
+CLASS MOMSMOKE;
+VAR WEIGHT;
+RUN;
+/*Analysis: We are going to use Satterthwaite pool or result since the p-value = 0.0004 < 0.05, which means the varianles are unequal
+- confidence interval (226.5 256.4)
+- For the hypothesis comparing Smoking Mother and Infant Weight, t-value = 0.0001 and p-value = 0.0004
 
-**************************************************************************************************************
-- The range of values for the variable pdays is -1 to 854. Since the variable pdays represents the number 
-   of days that have been passed by after the client was last contacted from a previous campaign and
-   it is stated that the dataset has no missing values.
-   -1 would represent the clients that have not yet been contacted.
-**************************************************************************************************************
-- The values for the variable days range from 1-31, which implies that the values represent the day of the month
-**************************************************************************************************************
-;
-proc means data = Ban110.customer_all Nmiss;
-var age;
-run;
-*********************************************
--The variable age has 20 missing values 
-*********************************************
-Question 2.1;
+The conclusion is to reject the null hypothesis and accept the alternative hypothesis as the weight of the two categories are significantly different*/
 
-proc univariate data = ban110.customer_all;
-var age;
-histogram age;
-run;
+/*Test-2*/
+/*Hypothesis (h=0): The gender of the baby does not affect its weight*/
+/*Alternative Hypothesis (h=1): The gender of the baby affects its weight*/
 
-*Question 2.2;
-data ban110.customer_missing_age;
-set ban110.customer_all;
+PROC ttest DATA = WORK.BIRTH SIDES=2 ALPHA= 0.05 H0=0;
+TITLE "GENDER AND WEIGHT";
+CLASS boy;
+VAR WEIGHT;
+RUN;
+/*Analysis: We are going to use Satterthwaite pool or result since the p-value = 0.0001 < 0.05, which means the variances are unequal
+- confidence interval (-126.6 -106.8)
+- For the hypothesis comparing a  Baby Boy and Infant Weight, t-value = -23.18 and p-value = 0.0001
 
-if missing(age) then do;
-output;
-end;
-keep customer_id;
-run;
+The conclusion is to reject the null hypothesis and accept the alternative hypothesis as the weight of the two categories are significantly different*/
 
-*Question 2.3;
-data ban110.customer_all_imputed;
-set ban110.customer_all;
-run;
+/*Test-3*/
+/*Hypothesis (h=0): A mother's marital status does not affect the weight of their infant*/
+/*Alternative Hypothesis (h=1): A mother's marital status affects the weight of their infant*/
 
-proc stdize data= ban110.customer_all out= ban110.customer_all_imputed
-oprefix = Orig_
-reponly
-method = mean;
-var age;
-run;
+PROC ttest DATA = WORK.BIRTH SIDES=2 ALPHA= 0.05 H0=0;
+TITLE "MOTHER'S MARITAL STATUS AND INFANT'S WEIGHT";
+CLASS MARRIED;
+VAR WEIGHT;
+RUN;
 
-*Question 2.4;
-proc means data =ban110.customer_all_imputed Nmiss;
-var age;
-run;
+/*Analysis: We are going to use Satterthwaite pool or result since the p-value = 0.0001 < 0.05, which means the variances are unequal
+- confidence interval (-202.4 -180.2)
+- For the hypothesis comparing a  Baby Boy and Infant Weight, t-value = -33.88 and p-value = 0.0001
 
-*Question 2.5;
-proc datasets library= ban110;
-delete customer_all;
-run;
-
-proc datasets library=ban110;
-change customer_all_imputed = customer_all;
-run;
-
-*Question 3;
-title 'Influence of age on balance';
-proc sgplot data=ban110.customer_all;
-reg x=age y=balance / lineattrs=(color=red thickness=2);
-run;
-
-*Question 3.1;
-data Ban110.customer_all;
-set Ban110.customer_all;
-  if 18 <= age <= 35 then age_cat = 'young_adult';
-  else if 36 <= age <= 55 then age_cat = 'middle_age';
-  else age_cat = 'old';
-run;
-
-proc freq data=ban110.customer_all;
-  tables age_cat;
-run;
-
-proc sgplot data= BAN110.CUSTOMER_ALL;
-    vbar age_cat / response=balance group=balance groupdisplay=cluster stat=mean;
-    yaxis grid;
-run;
-*Question 3.2
--Old customers have the highest balance;
-
-*Question 4;
-proc univariate data = ban110.customer_all;
-var campaign;
-run;
-
-*Question 4.1;
-data ban110.customer_all;
-set ban110.customer_all;
- if campaign = 1 then campaign_cat = '1';
-  else if campaign = 2 then campaign_cat = '2';
-  else if campaign = 3 then campaign_cat = '3';
-  else campaign_cat = '>3';
- run;
- 
-*Question 5.1;
-title "Running PROC UNIVARIATE on balance";
-proc univariate data= ban110.customer_all noprint;
-   id customer_id;
-   var balance;
-   histogram /;
-run;
-
-*Question 5.2;
-
-proc sgplot data=ban110.CUSTOMER_ALL;
-    vbar y / response=balance group=balance groupdisplay=cluster stat=mean;
-    yaxis grid;
-run;
-
-
-
-title 'distribution of balance by y';
-proc univariate data=ban110.customer_all noprint; 
-class y; 
-histogram balance; 
-run;
-
-* The First graph is more informative as it defines a concise and accurate picture of 
-how many people bought the CDs and how many didn't;
-
-*Question 6.1;
-proc univariate data = ban110.customer_all;
-var pdays;
-run;
-
-*Question 6.2;
-data ban110.customer_all;
-set ban110.customer_all;
-if pdays = -1 then contacted_before = 'No';
-else contacted_before = 'Yes';
-run;
-
-*Question 6.3;
-proc print data = ban110.customer_all (obs= 5);
-where pdays > 0;
-run;
-
-*Question 6.4;
-data ban110.customer_all;
-set ban110.customer_all;
-drop pdays;
-run;
-
-*Question 6.5;
-proc means data = ban110.customer_all;
-run;
-
-*Question 7;
-proc sort data=ban110.customer_all;
-  by balance;
-run;
-
-proc print data=ban110.customer_all(obs=10);
-var balance;
-  title '10 Lowest Values of Balance';
-run;
-
-proc sort data=ban110.customer_all;
-  by descending balance;
-run;
-
-proc print data= ban110.customer_all(obs=10);
-var balance;
-  title '10 Highest Values of Balance';
-run;
-
-
-
-
+The conclusion is to reject the null hypothesis and accept the alternative hypothesis as the weight of the two categories are significantly different*/
 
